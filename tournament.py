@@ -4,11 +4,20 @@
 tournament.py
 =============
 
-Dr. Andreas Janzen, janzen@gmx.net
-Version 0.1, 2021-04-05
+Author : Dr. Andreas Janzen
+Email  : janzen (at) gmx.net
+Date   : 2021-04-07
+Version: 1.0
+
+Implements functions to organize a round-robin chess tournament:
+    - Create the tournament and store the key data in a dictionary
+    - Create a list of pairings, dependent on the number of players
+    - Print the pairing list for a certain round
+    - Get results for individual games and calculate the new ranking table
 """
 
 
+from datastorage import write_tournament_data, read_tournament_data
 from webscraper import create_player_list, print_player_list
 
 
@@ -38,6 +47,8 @@ def get_tournament_details():
         if tournament_venue:
             tournament["venue"] = tournament_venue
             break
+
+    tournament["player_list"] = create_player_list(tournament["players"])
 
     return tournament
 
@@ -109,8 +120,13 @@ def main():
     print("===========================")
     print("\nAndreas Janzen, 2021-04-05\n\n")
 
-    tournament = get_tournament_details()
-    player_list = create_player_list(tournament["players"])
+    # tournament = get_tournament_details()
+    # player_list = tournament["player_list"]
+    # write_tournament_data(tournament)
+
+    filename = "VM"
+    tournament = read_tournament_data(filename)
+    player_list = tournament["player_list"]
 
     tmp_str = f"Teilnehmerliste {tournament['name']}"
     print("\n\n" + "=" * len(tmp_str))

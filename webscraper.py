@@ -4,6 +4,11 @@
 webscraper.py
 =============
 
+Author : Dr. Andreas Janzen
+Email  : janzen (at) gmx.net
+Date   : 2021-04-07
+Version: 1.0
+
 Provides methods to create a player list for a chess tournament. Player data
 can either be fetched from the rating database of Deutscher Schachbund, or
 they can be entered manually. Data for a single player is passed as a
@@ -13,9 +18,6 @@ functions.
 Data fields in the dictionary comprise 'name', 'DWZ', 'evals' (number of DWZ
 evaluations), 'ELO' and 'club' (can be used for affiliation in general, e.g.
 for country, club, etc.).
-
-Dr. Andreas Janzen, janzen@gmx.net
-Version 1.0, 2021-04-05
 """
 
 
@@ -157,7 +159,8 @@ def create_player_list(number_players):
     """Create a list of players according to the input parameter number_players
     by repeated call to chose player. The function returns a list of
     dictionaries, each of which contains the details for one of the chosen
-    players.
+    players. If the number of players is an odd number, a bye ("spielfrei") is
+    added as the last player to make the number of players even.
     """
     player_list = list()
     tmp_str = f"Eingabe der Teilnehmerliste mit {number_players} Spielern"
@@ -170,6 +173,9 @@ def create_player_list(number_players):
         print(tmp_str)
         print("-" * len(tmp_str))
         player_list.append(chose_player())
+
+    if number_players % 2 != 0:
+        player_list.append({"name": "spielfrei"})
 
     return player_list
 
