@@ -63,7 +63,7 @@ def print_player_list(player_list):
     similar to the DWZ website of Deutscher Schachbund.
     """
     for index, player in enumerate(player_list, 1):
-        print(f"{index:2d}. {player['name'][:20]:20s}, ", end="")
+        print(f"{index:2d}. {player['name'][:25]:25s}, ", end="")
         if player.get("DWZ", ""):
             print(f"DWZ {player['DWZ']:4d}", end="")
             if player.get("evals", ""):
@@ -77,7 +77,7 @@ def print_player_list(player_list):
         else:
             print(" "*10, end="")
         if player.get("club", ""):
-            print(f"{player['club'][:30]:30s}")
+            print(f"{player['club'][:25]:25s}")
         else:
             print()
 

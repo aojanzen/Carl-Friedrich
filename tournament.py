@@ -14,23 +14,57 @@ Implements functions to organize a round-robin chess tournament:
     - Create a list of pairings, dependent on the number of players
     - Print the pairing list for a certain round
     - Get results for individual games and calculate the new ranking table
+
+Data structure:
+    Dictionary 'tournament' contains key data (name, number of players and
+    rounds, venue, date of last round), player list (supplemented by an
+    additional player to manage byes, if odd) with fixed order (index used for
+    abbreviation of pairing tables and standings), pairings for each round as a
+    list of lists containing the indices of the players at the given virtual
+    table and the result of the game. Results are abbreviated with a single
+    character, which is translated into points gained by both players with a
+    dictionary RESULTS2POINTS.
 """
 
 
-from datastorage import write_tournament_data, read_tournament_data
+from datastorage import write_tournament_data, read_tournament_data, \
+                        get_tournament_filename
 from webscraper import create_player_list, print_player_list
 
 
-def get_tournament_details():
+EXPAND_RESULT = {
+        "1": "1 - 0",
+        "0": "0 - 1",
+        "=": "= - =",
+        "+": "+ - -",
+        "-": "- - +",
+        "C": "- - -",
+        "_": ""
+        }
+
+RESULT2POINTS = {
+        "1": [1, 0],     # White wins
+        "=": [0.5, 0.5], # Draw
+        "0": [0, 1],     # Black wins
+        "+": [1, 0],     # Bye for white
+        "-": [0, 1],     # Bye for black
+        "C": [0, 0],     # Game has been cancelled
+        "_": [0,0]       # No result yet
+        }
+
+
+def create_new_tournament():
     """Ask user for details of a newly created tournament:name, number of
     players, and tournament venue
+
     Returns a dictionary with the respective fields plus lists for all rounds,
     including the pairings in the form of player numbers and lists with the
     results of each round.
     """
     tournament = dict()
 
-    print("\nLege ein neues Rundenturnier an...\n")
+    print("\n\nNeues Rundenturnier anlegen")
+    print("===========================\n")
 
     while True:
         tournament_name = input("Turnierbezeichnung > ").strip()
@@ -48,111 +82,163 @@ def get_tournament_details():
             tournament["venue"] = tournament_venue
             break
 
+    # create_player_list adds an additional player (a bye) to the player list
+    # to make the number of players an even number. The "players" entry in the
+    # dictionary remains unchanged. It counts only the real players.
     tournament["player_list"] = create_player_list(tournament["players"])
+    tournament["rounds"] = create_pairing_list(len(tournament["player_list"]))
+    tournament["standings"] = list()
+
+    write_tournament_data(tournament)
 
     return tournament
 
 
-def create_new_pairings(R, old_positions):
-    """docstring
+def load_tournament():
+    """Load tournament data from json file. Files are stored in folder ./data.
+    Player list is printed to show that the data have been loaded successfully.
+    Can be removed in a future update.
     """
-    n = len(old_positions)
+    filename = get_tournament_filename()
+    tournament = read_tournament_data(filename)
 
-    # R: number of new round, old_positions: positions of round R-1
+    tmp_str = "Teilnehmerliste " + tournament["name"]
+    print("\n\n" + "=" * len(tmp_str))
+    print(tmp_str)
+    print("=" * len(tmp_str))
+    print_player_list(tournament["player_list"])
+
+    return tournament
+
+
+def create_new_round(old_positions):
+    """Create new table positions based on scheme described in Wikipedia
+    article on round robin system (Berger tables). For each new round, player n
+    stays at his position if the number of players is even, while all other
+    players rotate counte-clockwise by n/2 positions. If the number of players
+    is odd, an additional n+1-th players is added as a bye. His opponent always
+    wins.
+
+    In every other round, player n has to rotate his board to get alternating
+    colours. The list "positions" is returned without considering if player n
+    has to flip the board, since the next pairings will be calculated without
+    consideration of whether player n had to rotate the board.
+    """
+    # n: number of players, old_positions: positions of previous round
+    n = len(old_positions)
     new_positions = list(old_positions)
 
     # Player n always stays at his position.
     new_positions[n-1] = n
+    # Rotate positions 1...n-1 by 5 positions counter-clockwise
     new_positions[:(int(n/2.)-1)] = old_positions[int(n/2.):(n-1)]
     new_positions[(int(n/2.)-1):(n-1)] = old_positions[:int(n/2.)]
 
-    # Return positions without considering if player n has to flip the board,
-    # since the next pairings will be calculated without (!) consideration of
-    # whether player n had to rotate the board.
     return new_positions
 
 
 def return_pairings(R, positions):
-    """docstring
+    """ Return pairings as a list of pairings with colours for player n
+    swapped in every other round to give him alternating colours. "_" is added
+    to each pairing as a placeholder for the result and an indicator that the
+    game has not been played yet (see conversion dictionary RESULT2POINTS).
     """
     n = len(positions)
     pairings = list()
 
-    # If R is an even round, player 10 has to switch colors with his opponent
+    # If R is an even round, player n has to switch colors with his opponent
     if R % 2 == 0:
-        pairings.append([positions[n-1], positions[0]])
+        pairings.append([positions[n-1], positions[0], "_"])
     else:
-        pairings.append([positions[0], positions[n-1]])
+        pairings.append([positions[0], positions[n-1], "_"])
 
     for table in range(1, int(n/2.)):
-        pairings.append([positions[table], positions[n-table-1]])
+        pairings.append([positions[table], positions[n-table-1], "_"])
 
-    # Return pairings as a string with colours for player n potentially swapped
     return pairings
 
 
-def print_pairings(pairings, player_list):
-    for pairing in pairings:
-        player1 = pairing[0]
-        player2 = pairing[1]
-        white = player_list[player1-1]['name']
-        black = player_list[player2-1]['name']
-        print(f"{white:20s} - {black:20s}")
-    print("\n")
+def create_pairing_list(number_players):
+    """Returns a list with pairings for each round of the tournaments the
+    pairings are triples of two player indices and a character that indicates
+    the outcome of a game according to the conversion dictionary RESULT2POINTS.
 
+    number_players corresponds to the number of real players plus a bye if the
+    number of players is an odd number. This bye is always the player with the
+    highest index in the player list.
 
-
-def main_menu():
-    """Main menu
+    Positions and pairings are kept separately because the colours at the board
+    where player n plays are swapped every other round.
     """
-    print("\n\n==================")
-    print("=== Hauptmenue ===")
-    print("==================\n")
+    pairing_list = list()
 
-    print("")
+    # Round 1: players are sorted in order, from then on use shifting scheme
+    R = 1
+    positions = list(range(1, number_players+1))
+
+    # For all rounds: add pairing list to local variable, then increase R for
+    # next round and rotate player positions
+    while R <= number_players - 1:
+        pairing_list.append(return_pairings(R, positions))
+        positions = create_new_round(positions)
+        R += 1
+
+    print(f"\nPairing list: {pairing_list}")
+    return pairing_list
+
+
+def print_pairings(tournament, R):
+    """docstring
+    """
+    pairing_list = tournament["rounds"][R-1]
+
+    print()
+    for pairing in pairing_list:
+        white = tournament["player_list"][pairing[0]-1]["name"][:25]
+        black = tournament["player_list"][pairing[1]-1]["name"][:25]
+        result = EXPAND_RESULT[pairing[2]]
+
+        print(f"{white:25s} - {black:25s}  {result}")
+    print()
+
+
+def update_result(tournament, R, game, result):
+    """Change the result of a game in a tournament. R designates the round,
+    game the game number, but they need to be converted to 0-based indices! The
+    resulting tournament standing is written to the json file after
+    confirmation from the user.
+
+    TO DO: old is just a shallow copy of tournament. Need to figure out how to
+    create a deep copy of the nested data structure, e.g. by creating a
+    temporarily saved file with the last confirmed situation that is deleted
+    when the user quits the program.
+    """
+    # Store the old situation to allow the user to discard the change.
+    old = tournament
+
+    # Update the tournament results
+    tournament["rounds"][R-1][game-1][2] = result
+
+    # Ask for confirmation and save the new tournament dictionary or discard.
+    tmp_str = f"Aktualisierte Resultate in Runde {R}:"
+    print("\n" + tmp_str)
+    print("-" * len(tmp_str))
+    print_pairings(tournament, R)
+
+    confirmation = input("Soll dieses Resultat gespeichert werden (j/J)? > ")
+    if confirmation[0].upper() == "J":
+        print("\nDer neue Turnierstand wurde gespeichert.\n")
+        write_tournament_data(tournament)
+        return tournament
+    else:
+        print("\nKeine Aenderung vorgenommen.")
+        return old
 
 
 def main():
     """docstring
     """
-    print("\n\n===========================")
-    print("=== CARL-FRIEDRICH V1.0 ===")
-    print("===========================")
-    print("\nAndreas Janzen, 2021-04-05\n\n")
-
-    # tournament = get_tournament_details()
-    # player_list = tournament["player_list"]
-    # write_tournament_data(tournament)
-
-    filename = "VM"
-    tournament = read_tournament_data(filename)
-    player_list = tournament["player_list"]
-
-    tmp_str = f"Teilnehmerliste {tournament['name']}"
-    print("\n\n" + "=" * len(tmp_str))
-    print(tmp_str)
-    print("=" * len(tmp_str))
-    print_player_list(player_list)
-    print("\n\n")
-
-    if len(player_list) % 2 != 0:
-        player_append({'name': 'spielfrei'})
-
-    positions = list(range(1, len(player_list)+1))
-
-    pairings = return_pairings(1, positions)
-    print(f"Paarungen Runde 1:")
-    print("------------------")
-    print_pairings(pairings, player_list)
-
-    for R in range(2, len(player_list)):
-        positions = create_new_pairings(R, positions)
-        pairings = return_pairings(R, positions)
-        print(f"Paarungen Runde {R}:")
-        print("------------------")
-        print_pairings(pairings, player_list)
-
-    print("\n\nTschuess!\n")
+    pass
 
 
 if __name__ == "__main__":

@@ -15,21 +15,111 @@ Data is stored locally in the form of json files.
 """
 
 
-# Program starts here
+import sys
+
+from tournament import create_new_tournament, load_tournament, print_pairings,\
+                       update_result
+
+
+# Global variable to store current tournament data
+current_tournament = None
+
+
+def hello():
+    print("\n\nNOT YET IMPLEMENTED!\n\n")
+
+
+def enter_results():
+    """docstring
+    """
+    # current_tournament shall be changed in this function
+    global current_tournament
+
+    if not current_tournament:
+        print("\nBitte laden Sie zunächst ein Turnier, oder legen Sie ein neues"
+              " Turnier an.")
+    else:
+        print("\nBitte waehlen Sie die Runde, für die Sie Ergebnisse eingeben",
+              " möchten.")
+        while True:
+            R = input("\nRunde > ")
+            if R.isnumeric():
+                R = int(R)
+                break
+        print_pairings(current_tournament, R)
+
+        while True:
+            print("Bitte waehlen Sie eine Partie, oder geben Sie eine 0 ein,"
+                  "um zum\nHauptmenue zurueckzukehren.")
+            game = input("\nPartie > ")
+            if game.isnumeric():
+                game = int(game)
+                break
+        if game == 0:
+            return
+ 
+        print("\nBitte geben Sie das Ergebnis ein (1,0,=,+,- oder C für eine "
+              "ausgefallene Partie.\n")
+        while True:
+            result = input("Ergebnis > ")
+            if result[0] in "10=+-C":
+                result = result[0]
+                break
+
+        current_tournament = update_result(current_tournament, R, game, result)
+
+
 def main_menu():
     """docstring
     """
-    print("\n"*40)
+    # current_tournament shall be changed in this function
+    global current_tournament
+
+    menu = {
+                "1": "Neues Turnier anlegen",
+                "2": "Bestehendes Turnier laden",
+                "3": "Paarungen anzeigen und Ergebnisse eingeben",
+                "4": "Tabelle anzeigen",
+                "5": "Daten als Textdatei exportieren",
+                "6": "Programm beenden"
+           }
+
+    print("\n"*5)
+    print("===========================")
+    print("=== CARL-FRIEDRICH V1.0 ===")
+    print("===========================")
+    print("Andreas Janzen, 2021-04-05\n")
+
     print("==================")
     print("=== Hauptmenue ===")
     print("==================")
-
     print()
-    choice = input("Bitte waehlen Sie einen Menunepunkt > ")
+
+    for key, value in menu.items():
+        print(f"({key}) {value}")
+
+    while True:
+        choice = input("\nBitte waehlen Sie einen Menuepunkt > ")
+        if choice in list("123456"):
+            if choice == "1":
+                current_tournament = create_new_tournament()
+            elif choice == "2":
+                current_tournament = load_tournament()
+            elif choice == "3":
+                enter_results()
+            elif choice == "4":
+                hello()
+            elif choice == "5":
+                hello()
+            elif choice == "6":
+                sys.exit()
+        break # Leave input loop if user entered a valid choice
 
 
 def main():
-    pass
+    while True:
+        main_menu()
+
 
 if __name__ == "__main__":
     main()
