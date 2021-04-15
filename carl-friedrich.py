@@ -18,7 +18,7 @@ Data is stored locally in the form of json files.
 import sys
 
 from tournament import create_new_tournament, load_tournament, print_pairings,\
-                       update_result
+                       update_result, refresh_scores
 
 
 # Global variable to store current tournament data
@@ -57,9 +57,9 @@ def enter_results():
                 break
         if game == 0:
             return
- 
+
         print("\nBitte geben Sie das Ergebnis ein (1,0,=,+,- oder C für eine "
-              "ausgefallene Partie.\n")
+              "ausgefallene Partie.)\n")
         while True:
             result = input("Ergebnis > ")
             if result[0] in "10=+-C":
@@ -67,6 +67,13 @@ def enter_results():
                 break
 
         current_tournament = update_result(current_tournament, R, game, result)
+
+
+def print_standings(tournament):
+    """docstring
+    """
+    print("\n\n")
+    tournament = refresh_scores(tournament)
 
 
 def main_menu():
@@ -108,7 +115,7 @@ def main_menu():
             elif choice == "3":
                 enter_results()
             elif choice == "4":
-                hello()
+                print_standings(current_tournament)
             elif choice == "5":
                 hello()
             elif choice == "6":

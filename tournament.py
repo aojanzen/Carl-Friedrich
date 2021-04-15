@@ -23,7 +23,10 @@ Data structure:
     list of lists containing the indices of the players at the given virtual
     table and the result of the game. Results are abbreviated with a single
     character, which is translated into points gained by both players with a
-    dictionary RESULTS2POINTS.
+    dictionary RESULTS2POINTS. standings is a list that contains a dictionary
+    with the player indices as keys and the achieved points as values. The
+    ranking can then easily be deduced by sorting that list by values and
+    finding the player name for each player index.
 """
 
 
@@ -51,6 +54,22 @@ RESULT2POINTS = {
         "C": [0, 0],     # Game has been cancelled
         "_": [0,0]       # No result yet
         }
+
+
+def set_all_byes(tournament):
+    """If the number of players is odd and a bye is added to the player list as
+    the last entry, all pairings against the bye are set to a bye for the real
+    player, and the tournament data are returned to the caller.
+    """
+    bye = len(tournament["player_list"])
+
+    for round in tournament["rounds"]:
+        if round[0][0] == bye:
+            round[0][2] = "-"
+        else:
+            round[0][2] = "+"
+
+    return tournament
 
 
 def create_new_tournament():
@@ -87,7 +106,10 @@ def create_new_tournament():
     # dictionary remains unchanged. It counts only the real players.
     tournament["player_list"] = create_player_list(tournament["players"])
     tournament["rounds"] = create_pairing_list(len(tournament["player_list"]))
-    tournament["standings"] = list()
+    tournament["standings"] = list([0]*len(tournament["player_list"]))
+
+    if len(tournament["player_list"]) != tournament["players"]:
+        tournament = set_all_byes(tournament)
 
     write_tournament_data(tournament)
 
@@ -183,7 +205,6 @@ def create_pairing_list(number_players):
         positions = create_new_round(positions)
         R += 1
 
-    print(f"\nPairing list: {pairing_list}")
     return pairing_list
 
 
@@ -207,16 +228,8 @@ def update_result(tournament, R, game, result):
     game the game number, but they need to be converted to 0-based indices! The
     resulting tournament standing is written to the json file after
     confirmation from the user.
-
-    TO DO: old is just a shallow copy of tournament. Need to figure out how to
-    create a deep copy of the nested data structure, e.g. by creating a
-    temporarily saved file with the last confirmed situation that is deleted
-    when the user quits the program.
     """
-    # Store the old situation to allow the user to discard the change.
-    old = tournament
-
-    # Update the tournament results
+    # Update the tournament results and standings
     tournament["rounds"][R-1][game-1][2] = result
 
     # Ask for confirmation and save the new tournament dictionary or discard.
@@ -225,14 +238,49 @@ def update_result(tournament, R, game, result):
     print("-" * len(tmp_str))
     print_pairings(tournament, R)
 
-    confirmation = input("Soll dieses Resultat gespeichert werden (j/J)? > ")
-    if confirmation[0].upper() == "J":
-        print("\nDer neue Turnierstand wurde gespeichert.\n")
-        write_tournament_data(tournament)
-        return tournament
-    else:
-        print("\nKeine Aenderung vorgenommen.")
-        return old
+    write_tournament_data(tournament)
+
+
+def refresh_scores(tournament):
+    """docstring
+    """
+    # Reset score count to 0
+    tournament["standings"] = [0]*len(tournament["player_list"])
+
+    # Calculate scores by going through all rounds and all stored results
+    for round in tournament["rounds"]:
+        for game in round:
+            # Get the player ids for white and black (1...number of players)
+            white = game[0]
+            black = game[1]
+            result = game[2]
+
+            # Using player indices as list indices requires to subtract 1!
+            if result == "1" or result == "+":
+                tournament["standings"][white-1] += 1
+            elif result == "0" or result == "-":
+                tournament["standings"][black-1] += 1
+            elif result == "=":
+                tournament["standings"][white-1] += 0.5
+                tournament["standings"][black-1] += 0.5
+            elif result == "C" or result == "_":
+                pass
+
+    # If there was a bye for all players, remove that point from all players'
+    # scores.
+    if tournament["player_list"][-1]["name"] == "spielfrei":
+        tournament["standings"] = [res - 1 for res in tournament["standings"]]
+
+    # Print all player names and their scores, except for the bye
+    print("\n\nErzielte Punkte:")
+    print("-" * 16)
+
+    for id, score in enumerate(tournament["standings"]):
+        if tournament['player_list'][id]['name'] == "spielfrei":
+            continue
+        print(f"{tournament['player_list'][id]['name']:20s}, {score} points")
+
+    return tournament
 
 
 def main():
