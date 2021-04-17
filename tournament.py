@@ -240,22 +240,24 @@ def update_result(tournament, R, game, result):
 
     write_tournament_data(tournament)
 
+    return tournament
 
-def refresh_scores(tournament):
+
+def refresh_scores(tournament, R):
     """docstring
     """
     # Reset score count to 0
     tournament["standings"] = [0]*len(tournament["player_list"])
 
-    # Calculate scores by going through all rounds and all stored results
-    for round in tournament["rounds"]:
+    # Calculate scores from all rounds up to round R
+    for round in tournament["rounds"][:R]:
         for game in round:
             # Get the player ids for white and black (1...number of players)
+            # Using player indices as list indices then requires to subtract 1!
             white = game[0]
             black = game[1]
             result = game[2]
 
-            # Using player indices as list indices requires to subtract 1!
             if result == "1" or result == "+":
                 tournament["standings"][white-1] += 1
             elif result == "0" or result == "-":
@@ -268,17 +270,9 @@ def refresh_scores(tournament):
 
     # If there was a bye for all players, remove that point from all players'
     # scores.
-    if tournament["player_list"][-1]["name"] == "spielfrei":
-        tournament["standings"] = [res - 1 for res in tournament["standings"]]
-
-    # Print all player names and their scores, except for the bye
-    print("\n\nErzielte Punkte:")
-    print("-" * 16)
-
-    for id, score in enumerate(tournament["standings"]):
-        if tournament['player_list'][id]['name'] == "spielfrei":
-            continue
-        print(f"{tournament['player_list'][id]['name']:20s}, {score} points")
+    last_player = tournament["player_list"][-1]["name"]
+    if last_player == "spielfrei":
+        tournament["standings"] = [r - 1 for r in tournament["standings"][:-1]]
 
     return tournament
 

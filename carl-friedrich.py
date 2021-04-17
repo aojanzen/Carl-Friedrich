@@ -17,6 +17,7 @@ Data is stored locally in the form of json files.
 
 import sys
 
+from datastorage import write_pairings_to_file
 from tournament import create_new_tournament, load_tournament, print_pairings,\
                        update_result, refresh_scores
 
@@ -68,12 +69,65 @@ def enter_results():
 
         current_tournament = update_result(current_tournament, R, game, result)
 
+        return current_tournament
+
 
 def print_standings(tournament):
     """docstring
     """
-    print("\n\n")
-    tournament = refresh_scores(tournament)
+    tmp_str = "Tabelle anzeigen"
+    print("\n"+tmp_str)
+    print("=" * len(tmp_str))
+
+    print("Bitte waehlen Sie eine Runde, nach der der Tabellenstand\nangezeigt",
+          "werden soll.\n")
+    while True:
+        R = input("Runde > ")
+        if R.isnumeric():
+            R = int(R)
+            break
+
+    tournament = refresh_scores(tournament, R)
+
+    # Create a sorted list of player indices (0-based) corresponding to the
+    # sorted order of the scores in the tournament entry called "standings"
+    scores = tournament["standings"]
+    ranking = sorted(range(len(scores)), key = lambda k: scores[k], \
+            reverse = True)
+
+    tmp_str = f"Stand nach Runde {R}:"
+    print("\n\n" + tmp_str)
+    print("=" * len(tmp_str))
+    for rank, player_index in enumerate(ranking, 1):
+        player_name = tournament['player_list'][player_index]['name']
+        player_rating = tournament['player_list'][player_index].get('DWZ',"")
+        player_score = tournament["standings"][player_index]
+
+        if player_name == "spielfrei":
+            continue
+
+        print(f"{rank:2d}. {player_name:25s}",
+              f"{(', ' + str(player_rating)) if player_rating else ' '*6}, ",
+              f"{player_score} Punkte")
+
+    return None
+
+
+def export_pairings(current_tournament):
+    """docstring
+    """
+    tmp_str = "Exportiere Zwischenstand und Rundenpaarungen in Textdatei"
+    print("\n\n" + tmp_str)
+    print("=" * len(tmp_str))
+    print("\nDie Paarungen welcher Runde sollen exportiert werden?\n")
+
+    while True:
+        R = input("Runde > ")
+        if R.isnumeric():
+            R = int(R)
+            break
+
+    write_pairings_to_file(current_tournament, R)
 
 
 def main_menu():
@@ -87,7 +141,7 @@ def main_menu():
                 "2": "Bestehendes Turnier laden",
                 "3": "Paarungen anzeigen und Ergebnisse eingeben",
                 "4": "Tabelle anzeigen",
-                "5": "Daten als Textdatei exportieren",
+                "5": "Zwischenstand und Paarungen als Textdatei exportieren",
                 "6": "Programm beenden"
            }
 
@@ -95,7 +149,7 @@ def main_menu():
     print("===========================")
     print("=== CARL-FRIEDRICH V1.0 ===")
     print("===========================")
-    print("Andreas Janzen, 2021-04-05\n")
+    print("Andreas Janzen, April 2021\n")
 
     print("==================")
     print("=== Hauptmenue ===")
@@ -113,11 +167,11 @@ def main_menu():
             elif choice == "2":
                 current_tournament = load_tournament()
             elif choice == "3":
-                enter_results()
+                current_tournament = enter_results()
             elif choice == "4":
                 print_standings(current_tournament)
             elif choice == "5":
-                hello()
+                export_pairings(current_tournament)
             elif choice == "6":
                 sys.exit()
         break # Leave input loop if user entered a valid choice
