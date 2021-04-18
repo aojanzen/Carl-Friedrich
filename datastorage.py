@@ -20,8 +20,6 @@ import os
 import string
 import sys
 
-# from carl-friedrich import xx
-
 
 DATA_PATH = "./data/"
 
@@ -74,27 +72,22 @@ def get_tournament_filename():
     return filename
 
 
-def write_pairings_to_file(tournament, R):
+def switch_stdout(filename = ""):
     """docstring
     """
-    filename = DATA_PATH + tournament["name"].replace(" ", "_") + f"_R{R}_" + \
-               ".txt"
+    if filename:
+        filename = DATA_PATH + filename
+        # Direct standard output to file
+        try:
+            sys.stdout = open(filename, "w")
+        except Exception as e:
+            return e
+    else:
+        # Direct standard output back to screen
+        sys.stdout.close()
+        sys.stdout = sys.__stdout__
 
-    # Direct standard output to file
-    try:
-        sys.stdout = open(filename, "w")
-    except Exception as e:
-        return e
-
-    tmp_str = f"Zwischenstand vor Runde {R}"
-    print(tmp_str)
-    print("=" * len(tmp_str))
-
-    # Direct standard output back to screen
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
-
-    return None
+    return "OK"
 
 
 def main():

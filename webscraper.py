@@ -63,6 +63,9 @@ def print_player_list(player_list):
     similar to the DWZ website of Deutscher Schachbund.
     """
     for index, player in enumerate(player_list, 1):
+        if player['name'] == "spielfrei":
+            continue
+
         print(f"{index:2d}. {player['name'][:25]:25s}, ", end="")
         if player.get("DWZ", ""):
             print(f"DWZ {player['DWZ']:4d}", end="")

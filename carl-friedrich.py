@@ -17,26 +17,18 @@ Data is stored locally in the form of json files.
 
 import sys
 
-from datastorage import write_pairings_to_file
 from tournament import create_new_tournament, load_tournament, print_pairings,\
-                       update_result, refresh_scores
+        update_result, refresh_scores, print_standings, write_pairings_to_file
 
 
-# Global variable to store current tournament data
+# Define global variable to hold the current tournament data
 current_tournament = None
 
 
-def hello():
-    print("\n\nNOT YET IMPLEMENTED!\n\n")
-
-
-def enter_results():
+def enter_results(tournament):
     """docstring
     """
-    # current_tournament shall be changed in this function
-    global current_tournament
-
-    if not current_tournament:
+    if not tournament:
         print("\nBitte laden Sie zunächst ein Turnier, oder legen Sie ein neues"
               " Turnier an.")
     else:
@@ -47,7 +39,8 @@ def enter_results():
             if R.isnumeric():
                 R = int(R)
                 break
-        print_pairings(current_tournament, R)
+
+        print_pairings(tournament, R)
 
         while True:
             print("Bitte waehlen Sie eine Partie, oder geben Sie eine 0 ein,"
@@ -57,7 +50,7 @@ def enter_results():
                 game = int(game)
                 break
         if game == 0:
-            return
+            return tournament
 
         print("\nBitte geben Sie das Ergebnis ein (1,0,=,+,- oder C für eine "
               "ausgefallene Partie.)\n")
@@ -67,12 +60,12 @@ def enter_results():
                 result = result[0]
                 break
 
-        current_tournament = update_result(current_tournament, R, game, result)
+        tournament = update_result(tournament, R, game, result)
 
-        return current_tournament
+        return tournament
 
 
-def print_standings(tournament):
+def print_standings_menu(tournament):
     """docstring
     """
     tmp_str = "Tabelle anzeigen"
@@ -88,32 +81,12 @@ def print_standings(tournament):
             break
 
     tournament = refresh_scores(tournament, R)
-
-    # Create a sorted list of player indices (0-based) corresponding to the
-    # sorted order of the scores in the tournament entry called "standings"
-    scores = tournament["standings"]
-    ranking = sorted(range(len(scores)), key = lambda k: scores[k], \
-            reverse = True)
-
-    tmp_str = f"Stand nach Runde {R}:"
-    print("\n\n" + tmp_str)
-    print("=" * len(tmp_str))
-    for rank, player_index in enumerate(ranking, 1):
-        player_name = tournament['player_list'][player_index]['name']
-        player_rating = tournament['player_list'][player_index].get('DWZ',"")
-        player_score = tournament["standings"][player_index]
-
-        if player_name == "spielfrei":
-            continue
-
-        print(f"{rank:2d}. {player_name:25s}",
-              f"{(', ' + str(player_rating)) if player_rating else ' '*6}, ",
-              f"{player_score} Punkte")
+    print_standings(tournament, R)
 
     return None
 
 
-def export_pairings(current_tournament):
+def export_pairings(tournament):
     """docstring
     """
     tmp_str = "Exportiere Zwischenstand und Rundenpaarungen in Textdatei"
@@ -127,7 +100,7 @@ def export_pairings(current_tournament):
             R = int(R)
             break
 
-    write_pairings_to_file(current_tournament, R)
+    write_pairings_to_file(tournament, R)
 
 
 def main_menu():
@@ -167,9 +140,9 @@ def main_menu():
             elif choice == "2":
                 current_tournament = load_tournament()
             elif choice == "3":
-                current_tournament = enter_results()
+                current_tournament = enter_results(current_tournament)
             elif choice == "4":
-                print_standings(current_tournament)
+                print_standings_menu(current_tournament)
             elif choice == "5":
                 export_pairings(current_tournament)
             elif choice == "6":

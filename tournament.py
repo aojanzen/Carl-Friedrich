@@ -31,7 +31,7 @@ Data structure:
 
 
 from datastorage import write_tournament_data, read_tournament_data, \
-                        get_tournament_filename
+                        get_tournament_filename, switch_stdout
 from webscraper import create_player_list, print_player_list
 
 
@@ -56,24 +56,8 @@ RESULT2POINTS = {
         }
 
 
-def set_all_byes(tournament):
-    """If the number of players is odd and a bye is added to the player list as
-    the last entry, all pairings against the bye are set to a bye for the real
-    player, and the tournament data are returned to the caller.
-    """
-    bye = len(tournament["player_list"])
-
-    for round in tournament["rounds"]:
-        if round[0][0] == bye:
-            round[0][2] = "-"
-        else:
-            round[0][2] = "+"
-
-    return tournament
-
-
 def create_new_tournament():
-    """Ask user for details of a newly created tournament:name, number of
+    """Ask user for details of a newly created tournament: name, number of
     players, and tournament venue
 
     Returns a dictionary with the respective fields plus lists for all rounds,
@@ -108,9 +92,6 @@ def create_new_tournament():
     tournament["rounds"] = create_pairing_list(len(tournament["player_list"]))
     tournament["standings"] = list([0]*len(tournament["player_list"]))
 
-    if len(tournament["player_list"]) != tournament["players"]:
-        tournament = set_all_byes(tournament)
-
     write_tournament_data(tournament)
 
     return tournament
@@ -125,8 +106,7 @@ def load_tournament():
     tournament = read_tournament_data(filename)
 
     tmp_str = "Teilnehmerliste " + tournament["name"]
-    print("\n\n" + "=" * len(tmp_str))
-    print(tmp_str)
+    print("\n\n" + tmp_str)
     print("=" * len(tmp_str))
     print_player_list(tournament["player_list"])
 
@@ -213,7 +193,6 @@ def print_pairings(tournament, R):
     """
     pairing_list = tournament["rounds"][R-1]
 
-    print()
     for pairing in pairing_list:
         white = tournament["player_list"][pairing[0]-1]["name"][:25]
         black = tournament["player_list"][pairing[1]-1]["name"][:25]
@@ -221,6 +200,8 @@ def print_pairings(tournament, R):
 
         print(f"{white:25s} - {black:25s}  {result}")
     print()
+
+    return None
 
 
 def update_result(tournament, R, game, result):
@@ -246,8 +227,12 @@ def update_result(tournament, R, game, result):
 def refresh_scores(tournament, R):
     """docstring
     """
+    if not tournament:
+        print("\n\n*** No tournament data available! ***\n\n")
+        return
+
     # Reset score count to 0
-    tournament["standings"] = [0]*len(tournament["player_list"])
+    tournament["standings"] = list([0] * len(tournament["player_list"]))
 
     # Calculate scores from all rounds up to round R
     for round in tournament["rounds"][:R]:
@@ -268,13 +253,71 @@ def refresh_scores(tournament, R):
             elif result == "C" or result == "_":
                 pass
 
-    # If there was a bye for all players, remove that point from all players'
-    # scores.
-    last_player = tournament["player_list"][-1]["name"]
-    if last_player == "spielfrei":
-        tournament["standings"] = [r - 1 for r in tournament["standings"][:-1]]
-
     return tournament
+
+
+def print_standings(tournament, R):
+    """docstring
+    """
+    # Create a sorted list of player indices (0-based) corresponding to the
+    # sorted order of the scores in the tournament entry called "standings"
+    scores = tournament["standings"]
+    ranking = sorted(range(len(scores)), key = lambda k: scores[k], \
+            reverse = True)
+
+    tmp_str = f"Stand nach Runde {R}:"
+    print("\n" + tmp_str)
+    print("=" * len(tmp_str))
+
+    for rank, player_index in enumerate(ranking, 1):
+        player_name = tournament['player_list'][player_index]['name']
+        player_rating = tournament['player_list'][player_index].get('DWZ',"")
+        player_score = tournament["standings"][player_index]
+
+        if player_name == "spielfrei":
+            continue
+
+        print(f"{rank:2d}. {player_name:25s}",
+              f"{(', ' + str(player_rating)) if player_rating else ' '*6}, ",
+              f"{player_score} Punkte")
+
+    return None
+
+
+def write_pairings_to_file(tournament, R):
+    """docstring
+    """
+    filename = tournament["name"].replace(" ", "_") + f"_R{R}" + ".txt"
+
+    # Switch standard output to file, the use existing functions to output data
+    try:
+        switch_stdout(filename)
+    except Error as e:
+        print("\n\n*** Kann nicht in Datei exportieren! ***\n\n")
+        return None
+
+    tmp_str = "CARL-FRIEDRICH V1.0"
+    print("=" * (len(tmp_str) + 8))
+    print("=== " + tmp_str + " ===")
+    print("=" * (len(tmp_str) + 8) + "\n")
+
+    tmp_str = f"Zwischenstand und Paarungsliste für Runde {R}:"
+    print(tmp_str)
+    print("-" * len(tmp_str))
+
+    refresh_scores(tournament, R-1)
+    print_standings(tournament, R-1)
+
+    tmp_str = f"Paarungen in Runde {R}:"
+    print("\n" + tmp_str)
+    print("=" * len(tmp_str))
+
+    print_pairings(tournament, R)
+
+    # Switch standard output back to console
+    switch_stdout()
+
+    return None
 
 
 def main():
