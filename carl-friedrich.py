@@ -11,7 +11,35 @@ A command line app to organize round-robin chess tournaments
 
 Player details can be loaded from the website of the German Chess Association,
 pairings will be set according to the Berger tables that the FIDE recommends.
-Data is stored locally in the form of json files.
+Data is stored locally in the form of json files. Intermediate standings and
+pairings for the next round can be exported as ASCII text documents.
+
+This is the main file of the application. Further modules are:
+    - datastorage.py
+    - tournament.py
+    - webscraping.py
+
+Functions in carl-friedrich.py:
+===============================
+enter_results(tournament)
+    Lets the user chose a round and a game for which the result can be edited.
+    Updates the tournament data and returns them as a dictionary to the calling
+    function.
+
+print_standings_menu(tournament)
+    Lets the user enter a round, calculates the scores of all players after
+    that round and displays the intermediate standings after that round. Always
+    returns None.
+
+export_pairings(tournament)
+    sdsdfs
+
+main_menu()
+    Prints the main menu and lets the user chose a menu item.
+
+main()
+    Calls "main_menu" in an infinite loop. The user can quit the program in the
+    main menu by call to sys.exit().
 """
 
 
@@ -26,7 +54,9 @@ current_tournament = None
 
 
 def enter_results(tournament):
-    """docstring
+    """Lets the user chose a round R, prints the pairings and lets the user
+    chose a game to edit, then asks for the result of that game and updates the
+    tournament data accordingly. Returns the updated tournament data.
     """
     if not tournament:
         print("\nBitte laden Sie zunächst ein Turnier, oder legen Sie ein neues"
@@ -66,7 +96,9 @@ def enter_results(tournament):
 
 
 def print_standings_menu(tournament):
-    """docstring
+    """Lets the user chose a round after which the intermediate standings shall
+    be displayed, calculates the scores of all players after that round and
+    displays the standings, sorted by the number of scored points.
     """
     tmp_str = "Tabelle anzeigen"
     print("\n"+tmp_str)
@@ -87,7 +119,8 @@ def print_standings_menu(tournament):
 
 
 def export_pairings(tournament):
-    """docstring
+    """Lets the user chose a round, then writes the intermediate standings
+    before that round and the pairings of the round into an ASCII text file.
     """
     tmp_str = "Exportiere Zwischenstand und Rundenpaarungen in Textdatei"
     print("\n\n" + tmp_str)
@@ -104,7 +137,7 @@ def export_pairings(tournament):
 
 
 def main_menu():
-    """docstring
+    """Prints the main menu and lets the user chose a menu item.
     """
     # current_tournament shall be changed in this function
     global current_tournament
@@ -151,6 +184,8 @@ def main_menu():
 
 
 def main():
+    """Calls the function main_menu in an infinite loop.
+    """
     while True:
         main_menu()
 

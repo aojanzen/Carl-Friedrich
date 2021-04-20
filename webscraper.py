@@ -18,6 +18,33 @@ functions.
 Data fields in the dictionary comprise 'name', 'DWZ', 'evals' (number of DWZ
 evaluations), 'ELO' and 'club' (can be used for affiliation in general, e.g.
 for country, club, etc.).
+
+Functions in webscraper.py:
+===========================
+get_players_by_name(name)
+    Accepts a string as input parameter, then calls the rating website of the 
+    German Chess Association (Deutscher Schachbund, DSB) for that name and
+    returns a list of dictionaries with the players that matched the name.
+
+print_player_list(player_list)
+    Prints the list "player_list" in a structured form. Always returns None.
+
+enter_player_data()
+    Lets the user enter the player data manually and returns a dict with the
+    same entries as if the data had been retrieved from the online database.
+
+chose_player()
+    Lets the user enter a player name, then calls get_players_by_name to fetch
+    the results from the DSB database. Finally, lets the user chose one of the
+    hits or enter the data manually. Returns a dict with the player details.
+
+create_player_list(number_players)
+    Creates a list of players by calling chose_player "number_players" times.
+    Returns a list of dictionaries with player details. Adds a bye, "spielfrei"
+    if "number_players" is odd.
+
+main()
+    Just a placeholder, does nothing.
 """
 
 
@@ -83,6 +110,8 @@ def print_player_list(player_list):
             print(f"{player['club'][:25]:25s}")
         else:
             print()
+
+    return None
 
 
 def enter_player_data():
@@ -184,13 +213,9 @@ def create_player_list(number_players):
 
 
 def main():
-    """Just makes sure that something sensible is executed if the modules is
-    called as __main__.
+    """docstring
     """
-    player_list = create_player_list(3)
-    print("\n\nTeilnehmerliste:\n")
-    print_player_list(player_list)
-    print("\n\nTschuess!\n\n")
+    pass
 
 
 if __name__ == "__main__":

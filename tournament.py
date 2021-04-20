@@ -9,13 +9,8 @@ Email  : janzen (at) gmx.net
 Date   : 2021-04-07
 Version: 1.0
 
-Implements functions to organize a round-robin chess tournament:
-    - Create the tournament and store the key data in a dictionary
-    - Create a list of pairings, dependent on the number of players
-    - Print the pairing list for a certain round
-    - Get results for individual games and calculate the new ranking table
-
 Data structure:
+===============
     Dictionary 'tournament' contains key data (name, number of players and
     rounds, venue, date of last round), player list (supplemented by an
     additional player to manage byes, if odd) with fixed order (index used for
@@ -27,8 +22,65 @@ Data structure:
     with the player indices as keys and the achieved points as values. The
     ranking can then easily be deduced by sorting that list by values and
     finding the player name for each player index.
-"""
 
+Implements functions to organize a round-robin chess tournament:
+    - Create the tournament and store the key data in a dictionary
+    - Create a list of pairings, dependent on the number of players
+    - Print the pairing list for a certain round
+    - Get results for individual games and calculate the new ranking table
+
+Functions in tournament.py:
+===========================
+create_new_tournament()
+    Creates a new tournament, asks the user for some key information, creates
+    the pairing table and calls a function that stores the data in a json file.
+    Returns a dictionary with the created data structure to the calling
+    function.
+
+load_tournament()
+    Load tournament data from a json file chosen from all json files stored in
+    folder ./data, print player list and return tournament data to calling
+    function.
+
+create_new_round(old_positions)
+    Rotates the positions of all players around a set of virtual tables to
+    determine the pairings of the next round. Based on an algorithm described
+    on Wikipedia.
+
+return_pairings(R, positions)
+    Returns the pairings for the next round, based on the positions provided as
+    a parameter. Swaps colours for player n if n is an odd number.
+
+create_pairing_list(number_players)
+    Returns a list with the pairings for all rounds, always consisting of the
+    id of the white and black player and a placeholder for the result,
+    initially "_" for an open result.
+
+print_pairings(tournament, R)
+    Print the pairings for a given round R from a complete tournament data set.
+
+update_result(tournament, R, game, result)
+    Update the result of a game in round R of the tournament with the result
+    given by the string "result". The updated tournament data is stored without
+    asking the user for confirmation.
+
+refresh_scores(tournament, R)
+    Updates the "standings" entry of the tournament data, starting from 0s for
+    all players and then adding up the scores up to round R. The updated
+    tournament data is returned to the calling function.
+
+print_standings(tournament, R)
+    Update the scores using "refresh_scores", then print a sorted list of
+    players and scores to stdout (can be a file or the screen).
+
+write_pairings_to_file(tournament, R)
+    Redirect the output to a file, then print the intermediate standings after
+    round R-1 and the pairings for round R to that text file. Finally redirect
+    stdout back to the screen. Makes no changes to data, therefore returns None.
+
+main()
+    Just a placeholder, does nothing.
+"""
 
 from datastorage import write_tournament_data, read_tournament_data, \
                         get_tournament_filename, switch_stdout
@@ -189,7 +241,9 @@ def create_pairing_list(number_players):
 
 
 def print_pairings(tournament, R):
-    """docstring
+    """Print the pairing list for a given round R and the complete tournament
+    data as input. Results are expanded from a conversion dictionary defined as
+    a global variable. Return value is always None.
     """
     pairing_list = tournament["rounds"][R-1]
 
@@ -225,7 +279,11 @@ def update_result(tournament, R, game, result):
 
 
 def refresh_scores(tournament, R):
-    """docstring
+    """The "standings" entry of the dictionary "tournament" is calculated anew
+    from the ground up, i.e. the standings are all set to 0 first, then the
+    results from each round up to round R are added to the won points stored in
+    "standings". The update tournament data set is returned to the calling
+    function.
     """
     if not tournament:
         print("\n\n*** No tournament data available! ***\n\n")
@@ -257,8 +315,14 @@ def refresh_scores(tournament, R):
 
 
 def print_standings(tournament, R):
-    """docstring
+    """Update the scores after round R, then print the standings sorted by
+    scores, including the DWZ rating and the number of scored points. This
+    function is used to print the results to the screen as well as to export
+    them into a txt file.
     """
+    # Calculate scores after round R
+    tournament = refresh_scores(tournament, R)
+
     # Create a sorted list of player indices (0-based) corresponding to the
     # sorted order of the scores in the tournament entry called "standings"
     scores = tournament["standings"]
@@ -285,7 +349,10 @@ def print_standings(tournament, R):
 
 
 def write_pairings_to_file(tournament, R):
-    """docstring
+    """Redirect the standard output to a file with the filename consisting of
+    tournament name plus round. Print intermediate standings after round R-1
+    and the pairings for round R to an ASCII text file. Finally, close the file
+    and redirect the standard output back to the screen.
     """
     filename = tournament["name"].replace(" ", "_") + f"_R{R}" + ".txt"
 
@@ -305,7 +372,6 @@ def write_pairings_to_file(tournament, R):
     print(tmp_str)
     print("-" * len(tmp_str))
 
-    refresh_scores(tournament, R-1)
     print_standings(tournament, R-1)
 
     tmp_str = f"Paarungen in Runde {R}:"

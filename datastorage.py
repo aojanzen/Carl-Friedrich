@@ -12,6 +12,22 @@ Version: 1.0
 
 Implements storage of chess tournament data (general, pairings, results) as
 json files.
+
+Functions in datastorage.py:
+============================
+write_tournament_data(tournament)
+    Writes the data contained in the argument tournament into a json file.
+
+read_tournament_data(filename)
+    Reads the file "filename" from a json file.
+
+get_tournament_filename()
+    Lists the names of all json files in the directory ./data.
+
+switch_stdout(filename = "")
+    Switches the standard output between a file "filename" and the screen.
+main()
+    Just a placeholder, does nothing.
 """
 
 
