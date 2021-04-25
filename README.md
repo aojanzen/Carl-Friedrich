@@ -1,5 +1,5 @@
 # Carl-Friedrich
-#### Video Demo:  <URL HERE>
+#### Video Demo:  https://youtu.be/e3rOckyPz5
 #### Description:
 Carl-Friedrich is a command line application that allows users to organize
 chess tournaments with a focus on tournaments in Germany since the
