@@ -1,49 +1,45 @@
 # Carl-Friedrich
 #### Video Demo:  <URL HERE>
 #### Description:
-Carl-Friedrich is a web app that allows users to organize a chess tournament,
-to store the current state of the tournament in a database and to have the app
-determine the pairings for a round-robin tournament.
+Carl-Friedrich is a command line application that allows users to organize
+chess tournaments with a focus on tournaments in Germany since the
+menu navigation is in German, and the data entry form uses web queries from the
+player database of the German Chess Association (Deutscher Schachbund, DSB),
+even though data can also be entered manually. The app uses the pairing scheme
+that is proposed by the World Chess Association (FIDE), the Berger pairing
+tables, which are determined following a procedure described on Wikipedia
+(https://en.wikipedia.org/wiki/Round-robin_tournament).
 
-When the tournament is created, the user can enter user data manually and it
-is possible to use information that the app gets from internet databases, such
-as the FIDE database or the DWZ rating database of the German Chess Association.
-
-In the first step (final project for Harvard's CS50 course), the tournament
-type will be limited to round robin, leaving the popular, but more complex
-Swiss tournament for later. Likewise, the user interface will be in German.
-Other languages can be added as a later improvement, provided that the project
-will be maintained and used in the long run.
+In the first development stage, my final project for Harvard's CS50 course, the
+tournament type will be limited to round-robin, leaving the popular, but more
+complex Swiss tournament for later. Other languages than German could also be
+added as a later improvement, provided that the project will be maintained and
+used in the long run.
 
 Tournaments require the following input data:
-- Name of the tournament,
+- Name and venue of the tournament,
 - Number of players (determines the number of rounds),
 - Date of the last round (minimum information, option: dates of all rounds),
-- Name, email address, and a password for the tournament organizer
-- Name and email address of one or more referees, if applicable
 
-The following information has to be provided for each individual player:
-- Full name
-- Year of birth (to help with identification and rating update)
-- Nationality
-- Rating(s): ELO, national rating(s), e.g. Deutsche Wertungszahl (DWZ)
-- Optional: association(s), such as team or club
-- Comments can be added, e.g. about disability, penalty or exclusion
+The following information must be provided for each player:
+- Full name (last and first)
+and optionally:
+- Rating(s): national rating (Deutsche Wertungszahl, DWZ), number of
+  evaluations, international rating (ELO)
+- Affiliation, such as team or country
 
 #### Code organisation:
-**carlfriedrich.py**: Main program, using the Flask-specific file structure
+**carl-friedrich.py**: Main program with a main menu in an infinite loop and
+some high-level functions
 
-**database.py**: Stores information about tournament and players in a sqlite3
-database, provides methods to create new tournaments and new rounds, etc.
+**database.py**: Stores information about tournament and players in a json file
+and loads them back into the program.
 
 **tournament.py**: Provides methods for the actual organisation of the
-tournament
+tournament, such as creation of a new tournament, creation of a pairing table,
+entering game results, and an export of intermediate standings and pairings of
+the next round into an ASCII text file.
 
-yourapplication.py
-    /static
-        style.css
-    /templates
-        layout.html
-        index.html
-        login.html
-        ...
+**webscraper.py**: Get data from the open online database of the German Chess
+Association (Deutscher Schachbund, DSB), chose a player from the scraped data
+or enter the data manually, print the player list.

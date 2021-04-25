@@ -122,19 +122,24 @@ def create_new_tournament():
     print("===========================\n")
 
     while True:
-        tournament_name = input("Turnierbezeichnung > ").strip()
+        tournament_name = input("Turnierbezeichnung.... > ").strip()
         if tournament_name:
             tournament["name"] = tournament_name
             break
     while True:
-        tournament_players = input("Teilnehmerzahl.... > ").strip()
+        tournament_players = input("Teilnehmerzahl........ > ").strip()
         if tournament_players.isnumeric():
             tournament["players"] = int(tournament_players)
             break
     while True:
-        tournament_venue = input("Spielort.......... > ").strip()
+        tournament_venue = input("Spielort.............. > ").strip()
         if tournament_venue:
             tournament["venue"] = tournament_venue
+            break
+    while True:
+        tournament_end = input("Turnierende (yy-mm-dd) > ").strip()
+        if tournament_end:
+            tournament["last_round"] = tournament_end
             break
 
     # create_player_list adds an additional player (a bye) to the player list
@@ -144,9 +149,13 @@ def create_new_tournament():
     tournament["rounds"] = create_pairing_list(len(tournament["player_list"]))
     tournament["standings"] = list([0]*len(tournament["player_list"]))
 
-    write_tournament_data(tournament)
+    error = write_tournament_data(tournament)
 
-    return tournament
+    if error == "OK":
+        return tournament
+    else:
+        print(f"\n\nERROR: {error}\n\n")
+        return None
 
 
 def load_tournament():
@@ -155,14 +164,20 @@ def load_tournament():
     Can be removed in a future update.
     """
     filename = get_tournament_filename()
-    tournament = read_tournament_data(filename)
+    if filename:
+        tournament = read_tournament_data(filename)
+        if isinstance(tournament, Exception):
+            print(f"\n\nERROR: {tournament}")
+            return None
 
-    tmp_str = "Teilnehmerliste " + tournament["name"]
-    print("\n\n" + tmp_str)
-    print("=" * len(tmp_str))
-    print_player_list(tournament["player_list"])
+        tmp_str = "Teilnehmerliste " + tournament["name"]
+        print("\n\n" + tmp_str)
+        print("=" * len(tmp_str))
+        print_player_list(tournament["player_list"])
 
-    return tournament
+        return tournament
+
+    return None
 
 
 def create_new_round(old_positions):
@@ -253,6 +268,7 @@ def print_pairings(tournament, R):
         result = EXPAND_RESULT[pairing[2]]
 
         print(f"{white:25s} - {black:25s}  {result}")
+
     print()
 
     return None
@@ -273,9 +289,13 @@ def update_result(tournament, R, game, result):
     print("-" * len(tmp_str))
     print_pairings(tournament, R)
 
-    write_tournament_data(tournament)
+    error = write_tournament_data(tournament)
 
-    return tournament
+    if error == "OK":
+        return tournament
+    else:
+        print(f"\n\nERROR: {error}\n\n")
+        return None
 
 
 def refresh_scores(tournament, R):
@@ -286,8 +306,9 @@ def refresh_scores(tournament, R):
     function.
     """
     if not tournament:
-        print("\n\n*** No tournament data available! ***\n\n")
-        return
+        print("\nBitte laden Sie zunächst ein Turnier, oder legen Sie ein neues"
+              " Turnier an.")
+        return None
 
     # Reset score count to 0
     tournament["standings"] = list([0] * len(tournament["player_list"]))
@@ -320,6 +341,11 @@ def print_standings(tournament, R):
     function is used to print the results to the screen as well as to export
     them into a txt file.
     """
+    if not tournament:
+        print("\nBitte laden Sie zunächst ein Turnier, oder legen Sie ein neues"
+              " Turnier an.")
+        return None
+
     # Calculate scores after round R
     tournament = refresh_scores(tournament, R)
 
@@ -354,14 +380,18 @@ def write_pairings_to_file(tournament, R):
     and the pairings for round R to an ASCII text file. Finally, close the file
     and redirect the standard output back to the screen.
     """
+    if not tournament:
+        print("\nBitte laden Sie zunächst ein Turnier, oder legen Sie ein neues"
+              " Turnier an.")
+        return None
+
     filename = tournament["name"].replace(" ", "_") + f"_R{R}" + ".txt"
 
     # Switch standard output to file, the use existing functions to output data
     try:
         switch_stdout(filename)
     except Error as e:
-        print("\n\n*** Kann nicht in Datei exportieren! ***\n\n")
-        return None
+        return e
 
     tmp_str = "CARL-FRIEDRICH V1.0"
     print("=" * (len(tmp_str) + 8))
@@ -381,13 +411,16 @@ def write_pairings_to_file(tournament, R):
     print_pairings(tournament, R)
 
     # Switch standard output back to console
-    switch_stdout()
+    try:
+        switch_stdout()
+    except Error as e:
+        return e
 
-    return None
+    return "OK"
 
 
 def main():
-    """docstring
+    """Just a placeholder, does nothing, is not called.
     """
     pass
 

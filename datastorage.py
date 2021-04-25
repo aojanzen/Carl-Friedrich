@@ -77,19 +77,29 @@ def get_tournament_filename():
     print("\n\nLade Turnierdaten")
     print("=================\n")
 
-    files = os.listdir(DATA_PATH)
+    files = [f for f in os.listdir(DATA_PATH) if f.endswith(".json")]
     for i, f in enumerate(files, 1):
-        if f.endswith(".json"):
-            print(f"{i:3d} -- {f.split('.')[0].replace('_', ' '):25s}")
+        print(f"{i:3d} -- {f.split('.')[0].replace('_', ' '):25s}")
 
-    choice = input("\nBitte waehlen Sie ein Turnier aus > ")
-    filename = files[int(choice) - 1]
+    while True:
+        choice = input("\nBitte waehlen Sie ein Turnier aus (0: Abbruch) > ")
+        if choice.isnumeric():
+            choice = int(choice)
+            if 0 <= choice <= len(files):
+                if choice == 0:
+                    return None
+                filename = files[int(choice) - 1]
+                break
 
     return filename
 
 
 def switch_stdout(filename = ""):
-    """docstring
+    """Switch standard output stream to given filename or switch back to
+    __stdout__, the output stream that was active when the program was started,
+    if no filename is provided as input parameter. This function is used to
+    print standings and pairings either to the screen or export them into a txt
+    file.
     """
     if filename:
         filename = DATA_PATH + filename
@@ -107,7 +117,7 @@ def switch_stdout(filename = ""):
 
 
 def main():
-    """docstring
+    """Just a placeholder, does nothing.
     """
     pass
 

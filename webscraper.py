@@ -62,22 +62,31 @@ def get_players_by_name(name):
     database), DWZ, evals (number of DWZ evaluations), ELO and club.
     """
     URL = DB_DSB + "%2C".join([s.strip() for s in name.split(",")])
-    html = pd.read_html(URL)
 
     results = list()
+
+    try:
+        html = pd.read_html(URL)
+    except Exception as e:
+        print(f"\n\nERROR beim Laden von Daten aus der DSB-Datenbank:\n{e}\n\n")
+        return results # results is an empty list at this point
 
     for i in range(len(html[1])):
         player = dict()
 
-        player["name"] = html[1]["Spielername"][i]
-        tmp = html[1]["DWZ"][i]
-        if not pd.isna(tmp) and tmp != "Restp.":
-            player["DWZ"] = int(tmp.split("-")[0])
-            player["evals"] = int(tmp.split("-")[1])
-        tmp = html[1]["Elo"][i]
-        if tmp != "-----":
-            player["ELO"] = int(tmp)
-        player["club"] = html[1]["Verein"][i]
+        try:
+            player["name"] = html[1]["Spielername"][i]
+            tmp = html[1]["DWZ"][i]
+            if not pd.isna(tmp) and tmp != "Restp.":
+                player["DWZ"] = int(tmp.split("-")[0])
+                player["evals"] = int(tmp.split("-")[1])
+            tmp = html[1]["Elo"][i]
+            if tmp != "-----":
+                player["ELO"] = int(tmp)
+            player["club"] = html[1]["Verein"][i]
+        except Exception as e:
+            print("\n\nERROR!\nWebseite kann nicht gelesen werden! Bitte",
+                  f"kontaktieren Sie den Autor der Software!\n{e}\n\n")
 
         results.append(player)
 
@@ -92,24 +101,27 @@ def print_player_list(player_list):
     for index, player in enumerate(player_list, 1):
         if player['name'] == "spielfrei":
             continue
-
-        print(f"{index:2d}. {player['name'][:25]:25s}, ", end="")
-        if player.get("DWZ", ""):
-            print(f"DWZ {player['DWZ']:4d}", end="")
-            if player.get("evals", ""):
-                print(f"-{player['evals']:3d}, ", end="")
+        try:
+            print(f"{index:2d}. {player['name'][:25]:25s}, ", end="")
+            if player.get("DWZ", ""):
+                print(f"DWZ {player['DWZ']:4d}", end="")
+                if player.get("evals", ""):
+                    print(f"-{player['evals']:3d}, ", end="")
+                else:
+                    print("," + " "*5, end="")
             else:
-                print("," + " "*5, end="")
-        else:
-            print(" "*14, end="")
-        if player.get("ELO", ""):
-            print(f"ELO {player['ELO']:4d}, ", end="")
-        else:
-            print(" "*10, end="")
-        if player.get("club", ""):
-            print(f"{player['club'][:25]:25s}")
-        else:
-            print()
+                print(" "*14, end="")
+            if player.get("ELO", ""):
+                print(f"ELO {player['ELO']:4d}, ", end="")
+            else:
+                print(" "*10, end="")
+            if player.get("club", ""):
+                print(f"{player['club'][:25]:25s}")
+            else:
+                print()
+        except Exception as e:
+            print("\n\nERROR!\nDas Datenformat stimmt nicht mit dem",
+                  f"erwarteten Format überein!\n{e}\n\n")
 
     return None
 
@@ -127,8 +139,10 @@ def enter_player_data():
         print("\nAngaben, die nicht zwingend gemacht werden muessen, sind",
                 "durch '(opt.)' gekennzeichnet.")
         print("Die Dateneingaben kann mit ENTER uebersprungen werden.\n")
+
         last_name = input("Nachname" + "."*21 + " > ")
         first_name = input("Vorname (opt.)" + "."*15 + " > ")
+
         DWZ = input("DWZ (opt.)" + "."*19 + " > ")
         if DWZ != "" and DWZ.isnumeric():
             DWZ = int(DWZ)
@@ -160,6 +174,8 @@ def enter_player_data():
                 player["club"] = club
 
             return player
+        else:
+            return None
 
 
 def chose_player():
@@ -170,7 +186,10 @@ def chose_player():
 
     Returns a dict with the details for the chosen or manually entered player.
     """
-    name = input("Spieler (Nachname[, Vorname]): ")
+    while True:
+        name = input("Spieler (Nachname[, Vorname]): ")
+        if name:
+            break
     results = get_players_by_name(name)
     print_player_list(results)
     while True:
@@ -199,15 +218,24 @@ def create_player_list(number_players):
     print("\n\n" + "=" * len(tmp_str))
     print(tmp_str)
     print("=" * len(tmp_str))
+
     for i in range(1, number_players+1):
         tmp_str = f"Auswahl Spieler {i}/{number_players}"
         print("\n" + "-" * len(tmp_str))
         print(tmp_str)
         print("-" * len(tmp_str))
-        player_list.append(chose_player())
+        # Make sure that details are provided for every player, otherwise
+        # repeat the chosing process
+        while True:
+            new_player = chose_player()
+            if new_player:
+                player_list.append(new_player)
+                break
 
+    # Add a player as a bye to get an even number of players
     if number_players % 2 != 0:
         player_list.append({"name": "spielfrei"})
+
 
     return player_list
 

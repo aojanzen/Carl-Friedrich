@@ -32,7 +32,8 @@ print_standings_menu(tournament)
     returns None.
 
 export_pairings(tournament)
-    sdsdfs
+    Lets the user chose a round, then writes the intermediate standings
+    before that round and the pairings of the round into an ASCII text file.
 
 main_menu()
     Prints the main menu and lets the user chose a menu item.
@@ -63,13 +64,15 @@ def enter_results(tournament):
               " Turnier an.")
     else:
         print("\nBitte waehlen Sie die Runde, für die Sie Ergebnisse eingeben",
-              " möchten.")
+              "möchten.")
         while True:
             R = input("\nRunde > ")
             if R.isnumeric():
                 R = int(R)
-                break
+                if 0 < R <= len(tournament["player_list"])-1:
+                    break
 
+        print()
         print_pairings(tournament, R)
 
         while True:
@@ -78,7 +81,8 @@ def enter_results(tournament):
             game = input("\nPartie > ")
             if game.isnumeric():
                 game = int(game)
-                break
+                if 0 <= game <= len(tournament["player_list"])/2:
+                    break
         if game == 0:
             return tournament
 
@@ -100,22 +104,27 @@ def print_standings_menu(tournament):
     be displayed, calculates the scores of all players after that round and
     displays the standings, sorted by the number of scored points.
     """
-    tmp_str = "Tabelle anzeigen"
-    print("\n"+tmp_str)
-    print("=" * len(tmp_str))
+    if not tournament:
+        print("\nBitte laden Sie zunächst ein Turnier, oder legen Sie ein neues"
+              " Turnier an.")
+    else:
+        tmp_str = "Tabelle anzeigen"
+        print("\n"+tmp_str)
+        print("=" * len(tmp_str))
 
-    print("Bitte waehlen Sie eine Runde, nach der der Tabellenstand\nangezeigt",
-          "werden soll.\n")
-    while True:
-        R = input("Runde > ")
-        if R.isnumeric():
-            R = int(R)
-            break
+        print("Bitte waehlen Sie eine Runde, nach der der Tabellenstand",
+              "\nangezeigt werden soll.\n")
+        while True:
+            R = input("Runde > ")
+            if R.isnumeric():
+                R = int(R)
+                if 0 < R <= len(tournament["player_list"])-1:
+                    break
 
-    tournament = refresh_scores(tournament, R)
-    print_standings(tournament, R)
+        tournament = refresh_scores(tournament, R)
+        print_standings(tournament, R)
 
-    return None
+        return None
 
 
 def export_pairings(tournament):
@@ -131,9 +140,17 @@ def export_pairings(tournament):
         R = input("Runde > ")
         if R.isnumeric():
             R = int(R)
-            break
+            if 0 < R <= len(tournament["player_list"])-1:
+                break
 
-    write_pairings_to_file(tournament, R)
+    error = write_pairings_to_file(tournament, R)
+
+    if error == "OK":
+        return None
+    else:
+        print("\n\nERROR: Beim Datenexport in eine Textdatei ist ein Fehler",
+              f"aufgetreten.\n{error}\n\n")
+        return None
 
 
 def main_menu():
