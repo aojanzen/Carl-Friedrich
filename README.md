@@ -43,3 +43,48 @@ the next round into an ASCII text file.
 **webscraper.py**: Get data from the open online database of the German Chess
 Association (Deutscher Schachbund, DSB), chose a player from the scraped data
 or enter the data manually, print the player list.
+
+#### Use of libraries:
+**json**: Originally, the app was intended to be a web app with a sqlite
+database in the background to store all player and tournament information.
+After giving the issueus some though, I have decided not to use a database
+because the player ratings change with every tournament and therefore storing
+them for later use does not make sense. They have to be fetched from the
+official rating database every time anew. Round-robin tournaments are ususally
+only used for a rather small number of players because they would otherwise
+take a lot of rounds. This means that also the amount of data that has to be
+stored for a tournament is rather small. Finally, compound Python datatypes,
+such as lists of dicts, etc. are automatically converted into json by the json
+library. This makes storing and reading of the tournament data very easy.
+Lastly, json files have the advantage that they are plain ASCII text and thus
+make fault finding during the programming phase easy and allow the user to
+check and retrieve the stored information independent of Carl-Friedrich, if
+necessary.
+
+**pandas**: The read_html method makes it very easy to scrape tabulated data
+from html pages. I had to find the right element in the returned list of Pandas
+dataframes experimentally, but it was possible to get to the sought data in a
+relatively short time. Online databases of other chess federations, e.g. the
+USCF database, could be accessed in an identical fashion, as long as the URL
+that is used to send the query to the webserver can be composed in a simple
+way.
+
+If the app should be translated to English in the future, the US Chess
+Federation (USCF) has a database that works with queries in a similar way. The
+minimal search string for a player named "John Smith" is
+
+https://new.uschess.org/player-search?submit=1&display_name=Smith%252C%2520John
+
+#### Next steps:
+If the app should be improved in the future, the most important step to make it
+widely usable is to refactor the code so that the functions that are used to
+handle player data and tournament data, e.g. printing the intermediate
+standings, are easier to reuse. The next big step would then be to change the
+app so that one can organize either round-robin or Swiss tournaments. The
+latter are much more complex, but they also have a real-world value because
+Swiss tournaments are the type that is actually played a lot in real life.
+Beyond that, the next valuable step is certainly to turn the app into a web app
+so that the tournaments can be organized from a mobile phone rather than a PC
+with Python installed. Translating the app into other languages and the
+inclusion of other player databases are lower in priority. The app will hardly
+be used in real life as long as Swiss tournaments cannot be handled.
